@@ -1,16 +1,17 @@
 = Installation =
-
-  # Extract zip file in the modules directory
-  # Enable the module in the admin settings
-  # Add the filter in the input format you want to use.
+> 1. [Download this](https://github.com/mevango/flimme-drupal-module/archive/master.zip)
+        or use install module from remote
+> 2. Extract zip file in the modules directory
+> 3. Enable the module in the admin settings
+> 4. Add the filter in the input format you want to use.
 
 = Use =
 
 To insert a flimme frame in a node in drupal, add the following :
 
- [[[flimme element=<element-identifier> type=<flim|event|auth> width=<w> height=<h> className=<class> ID=<id>]]]
+ [[[flimme element=<- element-identifier -> type=<- flim|event|auth -> width=<- w -> height=<- h -> className=<- class -> ID=<- id ->]]]
 
-Note: > and < are not inserted, and a single space is required between variables.
+Note: -> and <- are not inserted, and a single space is required between variables.
 
 Where
  

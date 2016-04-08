@@ -1,0 +1,169 @@
+<?php
+// $Id: flimmeDrupal.module,v 1 2016/04/08 17:11:23 sspielvogel $
+// Author: S. Spielvogel
+
+global $_frameNo;
+function flimmeDrupal_theme() {
+  return array(
+    'flimmeDrupal_render_url' => array(
+      'variables' => array('value' => NULL,'params' =>NULL),
+    ),
+    'flimmeDrupal_render_height' => array(
+      'variables' => array('value' => NULL,'params' =>NULL),
+    ),
+    'flimmeDrupal_render_id' => array(
+      'variables' => array('value' => NULL,'params' =>NULL),
+    ),
+    'flimmeDrupal_render_offset' => array(
+      'variables' => array('value' => NULL,'params' =>NULL),
+    ),
+    'flimmeDrupal_render_classname' => array(
+      'variables' => array('value' => NULL,'params' =>NULL),
+    )
+  );
+}
+
+function flimmeDrupal_init() {
+	drupal_add_js(drupal_get_path('module', 'flimmeDrupal') . '/flimmeDrupal.js');
+}
+function flimmeDrupal_filter_info() {
+  $filters['flimmeDrupal_filter'] = array(
+    'title' => t('Flimme Stream Filter'),
+    'description' => t('Include Flimme iFrames. See module description for usage.'),
+    'process callback' => '_flimmeDrupal_filter_process',
+    'settings callback' => '_flimmeDrupal_filter_settings',
+    'tips callback'  => '_flimmeDrupal_filter_tips',
+	'cache' => FALSE
+  );
+  return $filters;
+}
+
+// Filter callbacks.
+function _flimmeDrupal_filter_process($text, $filter) {
+
+	$callback = create_function('$matches','return _flimmeDrupal_replacer($matches);'
+);
+
+	$text = preg_replace_callback("/\[\[\[flimme(.*?)\]\]\]/", $callback, $text);
+	return $text;
+}
+
+function _flimmeDrupal_filter_settings($form, &$form_state, $filter, $format, $defaults, $filters) {
+    $settings['insertframe_searchable'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Add content to search engine'),
+	    '#description' => t("Add content to search engine. Note than only first page is indexed."),
+      '#default_value' => (array_key_exists('insertframe_searchable',$filter->settings) ? $filter->settings['insertframe_searchable'] : false)
+    );
+    return $settings;
+}
+
+function _flimmeDrupal_filter_tips($filter, $format, $long = false) {
+
+	$helpText = "[[[flimme element=&lt;element-identifier&gt; width=&lt;w&gt; height=&lt;h&gt; className=&lt;class&gt; ID=&lt;id&gt; type=&lt;type&gt;]]] - flimme stream based on identifier. <br/>";
+	if ($long) {
+		$helpText .= "    width     ==> Size as css declaration (%,px,em)<br/>";
+		$helpText .= "    height    ==> Height as css declaration (%,px,em)<br/>";
+		$helpText .= "    element ==> element-identifier is the id, event-name or stream-name for the frame<br/>";
+		$helpText .= "    className ==> Name of a CSS class<br/>";
+		$helpText .= "    ID        ==> Id and name of the frame";
+		$helpText .= "    type    ==> the type of the stream (single flim, event or authenticated stream) ==> Default : flim";
+	}
+	return t($helpText);
+}
+
+
+function _flimmeDrupal_replacer($matches) {
+	return 	_flimmeDrupal_getHTML(trim($matches[1]));
+}
+
+function _flimmeDrupal_getHTML($params) {
+	global $_frameNo;
+	$output = "";
+	$_frameNo++;
+	$aParams = explode(" ", $params);
+	$params = array (
+		"element" => "",
+		'width' => "100%",
+		"height" => "100%",
+		"scrolling" => "no",
+		"type" => "flim",
+		"frameborder" => "0",
+		"id" => "iframe$_frameNo",
+		"offset" => "0",
+		"allowfullscreen" => "yes"
+	);
+	for ($i = 0; $i < count($aParams); $i++) {
+		$param = explode("=", $aParams[$i]);
+		if (count($param) == 2) {
+			$params[strtolower($param[0])] = trim(urldecode($param[1]),"\"' ");
+		}
+		
+	}
+
+	if ($params["element"] == "") {return t("Element-Identifier not set");}
+	$params["url"] = $params["element"];
+	foreach ($params as $tag => $value) {
+		$output = $output . flimmeDrupal_render_tag($tag, $value, $params) . " ";
+	}
+	$output =  "<iframe $output></iframe>";
+
+	$code = $output;
+	return "$code";
+}
+
+
+/* Rendering functions */
+
+function flimmeDrupal_render_tag($tag, $value, $params = NULL) {
+	$output = $tag . '="' . $value . '"';
+
+	if (flimmeDrupal_is_themed($tag)) {
+		$output = theme("flimmeDrupal_render_" . $tag, array("value" => $value,"params" => $params));
+	}
+	else {
+		if (function_exists("flimmeDrupal_render_" . $tag)) {
+			$function = "flimmeDrupal_render_" . $tag;
+			$output = $function($value,$params);
+		}
+	}
+	return $output;
+}
+
+function flimmeDrupal_is_themed($tag) {
+	return function_exists("theme_flimmeDrupal_render_" . strtolower($tag));
+}
+
+
+function theme_flimmeDrupal_render_url($vars) {
+	$id = $vars['value'];
+	switch ($vars["params"]["type"]){
+		case "auth":
+			return 'src="https://flimme.com/events_auth/' . $id . '/"';
+			break;
+		case "event":
+			return 'src="https://flimme.com/#/embed/events/' . $id . '"';
+			break;
+		default:
+			return 'src="https://flimme.com/#/embed/play/' . $id . '"';
+			break;
+	}
+}
+
+function theme_flimmeDrupal_render_id($vars) {
+	return 'id="' . $vars["value"] . '" name="' . $vars["value"] .'"' ;
+}
+
+
+function theme_flimmeDrupal_render_classname($vars) {
+	return 'class="' . $vars["value"] .'"';
+}
+
+
+function theme_flimmeDrupal_render_height($vars) {
+	$output = 'height="' . $vars["value"] . '"';
+	if ($vars["value"] == '100%') {
+		$output .= " onload='fixHeight(this," . $vars["params"]["offset"] . ")'";
+	}
+	return $output;
+}

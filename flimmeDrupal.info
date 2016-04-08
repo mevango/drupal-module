@@ -1,0 +1,8 @@
+name = flimmeDrupal
+description = A filter that includes flimme streams in an iFrame
+package = "Input filters"
+dependencies[] = filter
+version = "7.x-1.0"
+core=7.x
+files[] = flimmeDrupal.module
+datestamp = "1460023912"

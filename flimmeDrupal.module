@@ -49,11 +49,11 @@ function _flimmeDrupal_filter_process($text, $filter) {
 }
 
 function _flimmeDrupal_filter_settings($form, &$form_state, $filter, $format, $defaults, $filters) {
-    $settings['insertframe_searchable'] = array(
+    $settings['flimmeDrupal_searchable'] = array(
       '#type' => 'checkbox',
       '#title' => t('Add content to search engine'),
 	    '#description' => t("Add content to search engine. Note than only first page is indexed."),
-      '#default_value' => (array_key_exists('insertframe_searchable',$filter->settings) ? $filter->settings['insertframe_searchable'] : false)
+      '#default_value' => (array_key_exists('flimmeDrupal_searchable',$filter->settings) ? $filter->settings['flimmeDrupal_searchable'] : false)
     );
     return $settings;
 }
